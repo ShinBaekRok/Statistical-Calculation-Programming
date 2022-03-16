@@ -1,0 +1,52 @@
+---
+title: "Assignment2"
+author: "2019150445/Shin Baek Rok"
+date: '2020 10 8 '
+output:
+  word_document: default
+  pdf_document: default
+---
+
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+```
+
+
+1.
+```{r}
+midwest<-midwest %>% mutate(child_ratio=((poptotal-popadults)/poptotal)*100)
+```
+
+
+
+
+2.
+```{r}
+midwest %>% arrange(-child_ratio) %>% head(10) %>% select(child_ratio)
+```
+
+
+
+
+3.
+```{r}
+midwest<-midwest %>% mutate(grade=case_when(
+  child_ratio>=45 ~ 'large',
+  child_ratio>=30 & child_ratio<45 ~ 'middle',
+  child_ratio<30 ~ 'small'
+
+))
+midwest$grade %>% table()
+```
+
+
+
+
+4.
+```{r}
+ midwest<-midwest %>% mutate(asian_ratio=(popasian/poptotal)*100)
+
+midwest %>% arrange(asian_ratio) %>% head(5) %>% select(state, county, asian_ratio)
+```

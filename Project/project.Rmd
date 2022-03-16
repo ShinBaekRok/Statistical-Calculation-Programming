@@ -1,0 +1,228 @@
+---
+title: "Project"
+author: "2019150445/Shin Baek Rok"
+date: '2020 12 5 '
+output: word_document
+---
+
+```{r}
+library(tidyverse)
+library(gridExtra)
+library(ggrepel)
+```
+
+# 1. Overview
+
+
+
+### i) Overview
+```{r}
+#load dataset
+x<-read.csv('C:/trend_w_demo.csv')
+x %>% glimpse()
+```
+ 데이터셋에 대한 설명과 함께 glimpse를 읽어보면, 각 observation은 각각의 사람에 대한 나이, 연령대, 기혼 여부, 유아자녀 여부 등의 정보와 어느 업종에서 소비를 했는지를 나타내고 있다. 주어진 카드 데이터의 소비 년/월은 2019년 4월, 2019년 5월, 2020년 4월, 2020년 5월이다. 이는 실제 카드 이용 내역 데이터로 민감한 부분이 많기에 성별은 남/녀가 아닌 0/1로, 연령대는 A/B/C/D/E/F/G/H로 구분해 성별과 연령대를 특정지을 수 없게 주어졌다. 또한 카드 소비 내역에 대한 정보로 어떤 자녀가 있는지, 전업 주부인지, 결혼은 했는지 등을 카드사에서 추측해 스코어로 주어졌다.
+ 다음은 각각의 카테고리에 대한 설명이다.
+
+디저트: 커피 카페, 제과점
+호텔/숙박: 호텔, 펜션 등
+항공/여행상품: 항공사, 여행사, 렌터카 등
+취미: 스튜디오, 문구점, 전시회, 낚시 등
+할인점: 오프라인 마트, 오프라인 아울렛 등
+뷰티: 화장품 샵, 피부관리, 헤어 등
+면세점: 면세점
+종합몰: 온라인 쇼핑몰(백화점, 마트 등)
+오픈마켓/소셜: 온라인 쇼핑몰
+전문몰: 온라인 쇼핑몰(서적, 교육, 특화 스포츠 등)
+
+
+### ii) Overview-continued
+```{r}
+
+#몇몇 변수들이 한글로 되어있기 때문에 분석의 편리함을 위해 영어로 rename하였다.
+x<-x %>% rename(Gender=성별구분, Age_Group=연령대, 
+                Marriage=기혼스코어, Infant_Child=유아자녀스코어,
+                Elementary_Child=초등학생자녀스코어, 
+                MiddleHigh_Child=중고생자녀스코어, 
+                University_Child=대학생자녀스코어, 
+                House_Wife=전업주부스코어)
+```
+
+
+```{r}
+
+x %>% group_by(YM) %>% summarize(n=n())
+#year, month 별 observation수가 상이하기 때문에 비율로 분석할 것이다.
+
+
+#각 연월 당 카테고리별 차지비율 YM_Category로 저장하였다.
+YM_Category<-x %>% group_by(YM ,Category) %>% 
+  summarize(n=n()) %>% mutate(prop=n/sum(n)) 
+YM_Category 
+
+
+YM_Category %>% ungroup %>% ggplot(aes(x=as.character(YM),y=prop,col=Category,group=Category))+
+  geom_point()+geom_line()+geom_text_repel(data=subset(YM_Category,YM=='202005'),aes(label=Category))+
+  xlab('year_month')+ylab('proportion of category')+ theme(legend.position = 'none')
+```
+간단하게 그래프를 살펴보면, 오픈마켓/소셜 카테고리가 이번 년도 들어서 전체 소비에서 차지하는 비율이 대폭 상승하였고, 전문몰도 마찬가지로 상승하였다. 종합몰도 큰 폭은 아니지만 우상향 직선을 나타내고 있다. 반면에, 할인점, 취미, 항공/여행사, 호텔/숙박 등은 전체에서 차지하는 비율이 작년에 비해 감소하였음을 알 수 있다. 
+하지만 우리가 원하는 것은 코로나19가 소비에 영향을 미쳤는지를 알아보기 위한 그래프이기 때문에 4월과 5월의 데이터를 하나로 합쳐서 연별로 분석하는 것이 더 바람직해 보인다.
+
+
+```{r}
+
+Y_Category<- x%>% mutate(year=ifelse(YM %in% c(201904,201905),2019,2020)) %>%
+  group_by(year,Category) %>% summarize(n=n()) %>% mutate(prop=n/sum(n))
+
+
+Y_Category %>% ggplot(aes(as.character(year),prop,col=Category,group=Category))+geom_point()+geom_line()+
+ geom_text_repel(data=subset(Y_Category, year=='2020'),aes(label=Category))+
+  xlab('year_month')+ylab('proportion of category')+ theme(legend.position = 'none')
+```
+ 위에서 봤듯이, 오픈마켓/소셜, 전문몰, 종합몰, 디저트 카테고리는 우상향 그래프를 그리고 있고, 반면에 할인점, 항공/여행사, 호텔/숙박, 면세점, 취미, 뷰티 카테고리는 우하향 그래프를 나타내고 있다. 
+ 위의 업종분류표를 보면 오픈마켓/소셜, 전문몰, 종합몰은 모두 온라인 쇼핑몰인 것을 알 수 있고, 세 업종 모두 이번 년도 들어서 코로나19의 여파로 전체 소비에서 차지하는 비중이 대폭 상승하였다고 볼 수 있다. 반면에 호텔/숙박, 면세점, 취미, 할인점 등은 오프라인 매장에 거점을 두고 운영하고 있기에 여행을 기피하고 집 밖으로 잘 나가지 않는 현재의 상황에 비추어보면 우하향 그래프를 가지고 있는 것이 꽤나 자연스러운 결과로 보인다.
+ 하나 의문스러운 결과는 디저트 카테고리이다. 이 역시 오프라인 매장을 중심으로 돌아가는 업종인데, 2020년 들어서 오히려 소비가 증가한 것을 볼 수 있다. 앞의 월별 그래프를 봐도 디저트 카테고리는 계속 조금씩 증가하는 추세를 가지고 있다. 4월 5월에도 사회적 거리두기 정책이 시행되었지만 그 적용 범위가 넓지 않았고, 현재 정책과는 달리 카페, 제과점 등의 영업에는 아무런 제약이 걸리지 않았었다. 따라서 매출이 감소하는 경향은 크게 보이지 않았을 것이고, 이는 비율에 대한 그래프이기에 다른 업종에서의 소비가 큰 폭으로 감소함에 따라 카페에서의 소비가 소폭 상승한 것처럼 보인 것으로 생각할 수 있을 것이다. 아마 4, 5월에 정부에서 (자발적) 사회적 거리두기 정책을 시행하였지만 카페에서의 확진자가 잇달아 나옴에도 불구하고 카페에서의 소비가 줄지 않은 것을 확인하고 지금 단계의 강제적 사회적 거리두기로 카페 영업 제한을 걸은 것으로 보인다.
+  하지만 정말 이것이 코로나19의 영향으로 증/감 추세를 보이는지 아니면 우연에 의한 것인지 의문이 든다. 물론 다른 요인에 의한 것은 통제하지 못하지만, 2019년과 2020년 사이의 카테고리 별 소비에 유의미한 변화가 있었는지만은 오즈비로 구해볼 수 있다.
+
+
+### iii) Odds ratio
+```{r}
+#카테고리별 odd ratio 계산
+
+Category2019 <-Y_Category %>% ungroup %>% slice(1:10)
+Category2020 <-Y_Category %>% ungroup %>% slice(11:20)
+
+Category2019<-Category2019 %>% select(-year,-prop) %>% rename(n2019=n)
+Category2020<-Category2020 %>% select(-year,-prop) %>% rename(n2020=n)
+
+Category_or<-Category2019 %>% left_join(Category2020)
+
+Category_or<-Category_or %>% mutate(odds_ratio=(n2019/(sum(n2019)-n2019))/
+                                      (n2020/(sum(n2020)-n2020))) %>%
+  arrange(-odds_ratio)
+Category_or
+
+#These differences may occur just due to chance. So for each Category, we can compute confidence interval.
+log_or<-Category_or %>% mutate(log_or=log(odds_ratio)) %>%
+  mutate(se=sqrt(1/n2019+1/(sum(n2019)-n2019)+
+                   1/n2020+1/(sum(n2020)-n2020))) %>%
+  mutate(conf.low=log_or-qnorm(0.975)*se,
+         conf.high=log_or+qnorm(0.975)*se)
+log_or
+log_or %>%
+  mutate(Category=reorder(Category,log_or)) %>%
+  ggplot(aes(x=Category, ymin=conf.low,ymax=conf.high))+
+  geom_errorbar()+
+  geom_point(aes(Category,log_or)) + coord_flip()+
+  ylab('Log odds ratio between Category and year')
+#All Categories are significant since error bars does not capture 0.
+```
+ 위 그래프를 살펴보면, 모든 카테고리의 error bar가 0을 포함하고 있지 않기에 2019년과 2020년에 유의미한 소비 차이가 있었다고 볼 수 있다. 특히 면세점과 항공/여행사, 할인점, 호텔/숙박은 2019년에 비해 2020년에 유의미하게 감소하였고, 오픈마켓/소셜은 2019년에 비해 2020년에 유의미하게 증가한 것을 알 수 있다. 면세점, 항공/여행사, 호텔/숙박이 가장 큰 비율로 감소한 것으로 보아 관광업계에 큰 타격이 있었던 것으로 보이고, 오프라인 중심의 시장보다 온라인 중심의 시장이 커지고 있는 것을 확인할 수 있다. 물론 코로나19가 없었어도 오프라인 시장에서 온라인 시장으로의 전환은 이미 일어나고 있었지만, 코로나19가 이 변화를 더욱 촉진시킨 것 같다.
+
+
+# 2. Gender 별 소비 변화 분석
+
+
+### 1) Overview
+```{r}
+Y_Category_Gender<-x %>% mutate(year=ifelse(YM %in% c(201904,201905),2019,2020)) %>%
+  group_by(Gender,year, Category) %>% summarize(n=n()) %>% mutate(prop=n/sum(n))
+
+Y_Category_Gender %>% ungroup %>% ggplot(aes(factor(year),prop,col=Category, group=Category))+
+  geom_line()+xlab('year')+ylab('proportion of category')+
+  facet_grid(.~Gender)+geom_point()
+```
+아쉽게도 이 데이터셋의 성별은 남/녀가 아닌 0과 1로 나와있다. Gender 별 그래프를 살펴보면 대부분의 카테고리가 비슷한 형태를 띄고 있다. 눈에 띄는 것은 성별 1의 뷰티와 종합몰 카테고리가 성별0의 그것보다 많이 높이 있다는 것이다. 대신 성별 0은 취미 카테고리가 더 높게 나타난다. 이를 가지고 조심스럽게 추측해보건데, 아마 성별 0의 남자이고, 성별 1이 여자이지 않을까 싶다. 이 외에는 이 그래프에서 딱히 알아낼 수 있는 것은 없어 보인다. 성별 0과 성별 1은 대부분의 카테고리에서 증감을 같이하는 것처럼 보이기 때문이다. 이 변화도 연도별로 유의미한 것인지 알아보기 위해 오즈비를 계산해보자.
+
+
+### 2) Odds ratio
+```{r}
+
+#odds ratio
+x_gen0<-x %>% filter(Gender==0)
+x_gen1<-x %>% filter(Gender==1)
+
+x_gen0<-x_gen0 %>% mutate(year=ifelse(YM %in% c(201904,201905),2019,2020)) %>% 
+  group_by(year,Category) %>% summarize(n=n()) %>% mutate(prop=n/sum(n))
+x_gen1<-x_gen1 %>% mutate(year=ifelse(YM %in% c(201904,201905),2019,2020)) %>% 
+  group_by(year,Category) %>% summarize(n=n()) %>% mutate(prop=n/sum(n))
+
+
+#gen0
+x_gen0_2019<-x_gen0 %>% ungroup %>% slice(1:10)
+x_gen0_2020<-x_gen0 %>% ungroup %>% slice(11:20)
+
+x_gen0_2019 <-x_gen0_2019 %>% select(-year,-prop) %>% rename(n2019=n)
+x_gen0_2020 <-x_gen0_2020 %>% select(-year,-prop) %>% rename(n2020=n)
+x_gen0_or<- x_gen0_2019 %>% left_join(x_gen0_2020)
+
+gen0_log_or<-x_gen0_or %>% mutate(log_or=log((n2019/(sum(n2019)-n2019))/
+                                    (n2020/(sum(n2020)-n2020)))) %>%
+  mutate(se=sqrt(1/n2019+1/(sum(n2019)-n2019)+
+                   1/n2020+1/(sum(n2020)-n2020))) %>%
+  mutate(conf.low=log_or-qnorm(0.975)*se,
+         conf.high=log_or+qnorm(0.975)*se) %>%
+  select(Category,log_or,conf.low,conf.high) %>%
+  arrange(-log_or)
+gen0_log_or
+
+
+#gen1
+x_gen1_2019<-x_gen1 %>% ungroup %>% slice(1:10)
+x_gen1_2020<-x_gen1 %>% ungroup %>% slice(11:20)
+
+x_gen1_2019 <-x_gen1_2019 %>% select(-year,-prop) %>% rename(n2019=n)
+x_gen1_2020 <-x_gen1_2020 %>% select(-year,-prop) %>% rename(n2020=n)
+
+x_gen1_or<- x_gen1_2019 %>% left_join(x_gen1_2020)
+
+gen1_log_or<-x_gen1_or %>% mutate(log_or=log((n2019/(sum(n2019)-n2019))/
+                                               (n2020/(sum(n2020)-n2020)))) %>%
+  mutate(se=sqrt(1/n2019+1/(sum(n2019)-n2019)+
+                   1/n2020+1/(sum(n2020)-n2020))) %>%
+  mutate(conf.low=log_or-qnorm(0.975)*se,
+         conf.high=log_or+qnorm(0.975)*se) %>%
+  select(Category,log_or,conf.low,conf.high) %>%
+  arrange(-log_or)
+gen1_log_or
+```
+
+```{r}
+#plot
+
+plot0<-gen0_log_or %>%
+  mutate(Category=reorder(Category,log_or)) %>%
+  ggplot(aes(x=Category, ymin=conf.low,ymax=conf.high))+
+  geom_errorbar()+
+  geom_point(aes(Category,log_or)) + coord_flip()+
+  ylab('Log odds ratio where gender=0')
+
+
+plot1<-gen1_log_or %>%
+  mutate(Category=reorder(Category,log_or)) %>%
+  ggplot(aes(x=Category, ymin=conf.low,ymax=conf.high))+
+  geom_errorbar()+
+  geom_point(aes(Category,log_or)) + coord_flip()+
+  ylab('Log odds ratio where gender=1')
+
+grid.arrange(plot0,plot1,nrow=2)
+```
+
+
+```{r}
+#면세점
+tax_free<-x %>% mutate(year= ifelse(YM %in% c(201904,201905),2019,2020)) %>% group_by(Gender, Age_Group,year) %>% filter(Category=='면세점') %>% summarize(n=n()) %>% spread(year, n) %>% rename(n2019='2019',n2020='2020') %>% mutate(prop_20202019=n2020/n2019) %>% arrange(-prop_20202019) 
+tax_free[is.na(tax_free)]<-0
+tax_free
+```
+#by age
+x %>% group_by(Age_Group) %>% summarize(n=n()) %>% mutate(prop=n/sum(n)) %>% arrange(-prop)
+
+
+x %>% group_by(year,Category,Age_Group) %>% 
+  summarize(n=n()) %>% mutate(prop=n/sum(n)) %>% 
+  ggplot(aes(x=as.character(year),y=prop,col=Age_Group,
+             group=Category))+geom_point()+
+  geom_line(aes(group=Age_Group),size=1)+facet_wrap(.~Category)
+
+

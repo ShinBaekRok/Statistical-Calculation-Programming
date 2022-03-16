@@ -1,0 +1,95 @@
+---
+title: ''
+author: "2019150445/Shin Baek Rok"
+date: '2020 10 6 '
+output:
+  word_document: default
+  pdf_document: default
+---
+
+# 1.
+
+```{r}
+prime_number<-function(x){
+ z<-0
+  for(i in 1:x){
+  while(i%%2==0){
+   z<-z+1
+   i<-i/2
+  }
+ } 
+  print(z)
+  
+  
+}
+prime_number(100)
+```
+
+
+
+
+# 2.
+
+```{r}
+set.seed(1)
+
+council<-rep(c("A.local","A.pr","B.local","B.pr","C.local","C.pr","D.local","D.pr","E.local","E.pr")
+             ,c(161,13,84,19,1,5,0,3,7,7))
+         
+sample(council,30)->sample
+
+a<-data.frame(local=c(sum(sample%in%'A.local'),sum(sample%in%'B.local'), sum(sample%in%'C.local'),sum(sample%in%'D.local'),sum(sample%in%'E.local'))
+                ,pr=c(sum(sample%in%'A.pr'),sum(sample%in%'B.pr'),sum(sample%in%'C.pr'),sum(sample%in%'D.pr'),sum(sample%in%'E.pr'))
+                ,row.names=c('A','B','C','D','E'))
+a
+
+```
+
+
+
+
+# 3.
+```{r}
+f<-function(x,m){
+  n<-length(x)
+  y<-ceiling(runif(m,0,n))
+  z<-vector(length=m)
+  for(i in 1:m){
+   z[i]<-x[y[i]]
+  }
+  return(z)
+}
+f(1:10,5)
+f(1:10,5)
+```
+
+
+
+
+# 4.
+```{r}
+x <- c(1.83,  0.50,  1.62,  2.48, 1.68, 1.88, 1.55, 3.06, 1.30)
+y <- c(0.878, 0.647, 0.598, 2.05, 1.06, 1.28, 1.07, 3.14, 1.29)
+
+
+func<-function(x,y,paired=FALSE){
+  z<-0
+  if(paired==FALSE){
+  for(j in 1:length(y)){
+    for(i in 1:length(x)){
+      if(x[i]>y[j]){
+        z<-z+1
+      }
+    }
+   }
+  }
+  if(paired==TRUE){
+   rank<-rank(abs(x-y),ties.method='average')
+   z<-sum(rank*ifelse(x>y,1,0))
+  }
+  print(z)
+}
+
+func(x,y,paired=F)
+func(x,y,paired=T)
+```
